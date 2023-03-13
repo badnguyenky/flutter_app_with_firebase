@@ -1,0 +1,42 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class Auth {
+  late final FirebaseAuth _auth;
+
+  Auth(this._auth);
+
+  Stream<User?> get authStateChanges => _auth.idTokenChanges();
+
+  Future<String> login(String email, String password) async {
+    try {
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return "Logged In";
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<String> signUp(String email, String password) async {
+    try {
+      await _auth
+          .createUserWithEmailAndPassword(email: email, password: password)
+          .then((value) async {
+        User? user = FirebaseAuth.instance.currentUser;
+
+        await FirebaseFirestore.instance
+            .collection("users")
+            .doc(user!.uid)
+            .set({
+          'uid': user.uid,
+          'email': email,
+          'role': "user",
+          'password': password,
+        });
+      });
+      return "Signed Up";
+    } catch (e) {
+      return e.toString();
+    }
+  }
+}
